@@ -1,79 +1,162 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>OPB - Court Opinion Search</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OPB - Search Judicial Opinions</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: "DM Sans", sans-serif;
+            font-optical-sizing: auto;
+            background-image: url('/static/images/bg.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }
+    </style>
 </head>
 <body>
-    <h1>Search Court Opinions</h1>
-    <form action="/search" method="post">
-        <label for="keyword">Keyword Query:</label>
-        <input type="text" id="keyword" name="keyword"><br><br>
-        <label for="semantic_query">Semantic Query:</label>
-        <textarea id="semantic_query" name="semantic_query"></textarea><br><br>
-        <label for="before_date">Before Date:</label>
-        <input type="date" id="before_date" name="before_date"><br><br>
-        <label for="after_date">After Date:</label>
-        <input type="date" id="after_date" name="after_date"><br><br>
-        <label for="jurisdiction">Jurisdiction:</label>
-        <select id="jurisdiction" name="jurisdiction">
-            <option value="All">All</option>
-            <option value="US">US</option>
-            <option value="AL">Alabama (AL)</option>
-            <option value="AK">Alaska (AK)</option>
-            <option value="AZ">Arizona (AZ)</option>
-            <option value="AR">Arkansas (AR)</option>
-            <option value="CA">California (CA)</option>
-            <option value="CO">Colorado (CO)</option>
-            <option value="CT">Connecticut (CT)</option>
-            <option value="DE">Delaware (DE)</option>
-            <option value="FL">Florida (FL)</option>
-            <option value="GA">Georgia (GA)</option>
-            <option value="HI">Hawaii (HI)</option>
-            <option value="ID">Idaho (ID)</option>
-            <option value="IL">Illinois (IL)</option>
-            <option value="IN">Indiana (IN)</option>
-            <option value="IA">Iowa (IA)</option>
-            <option value="KS">Kansas (KS)</option>
-            <option value="KY">Kentucky (KY)</option>
-            <option value="LA">Louisiana (LA)</option>
-            <option value="ME">Maine (ME)</option>
-            <option value="MD">Maryland (MD)</option>
-            <option value="MA">Massachusetts (MA)</option>
-            <option value="MI">Michigan (MI)</option>
-            <option value="MN">Minnesota (MN)</option>
-            <option value="MS">Mississippi (MS)</option>
-            <option value="MO">Missouri (MO)</option>
-            <option value="MT">Montana (MT)</option>
-            <option value="NE">Nebraska (NE)</option>
-            <option value="NV">Nevada (NV)</option>
-            <option value="NH">New Hampshire (NH)</option>
-            <option value="NJ">New Jersey (NJ)</option>
-            <option value="NM">New Mexico (NM)</option>
-            <option value="NY">New York (NY)</option>
-            <option value="NC">North Carolina (NC)</option>
-            <option value="ND">North Dakota (ND)</option>
-            <option value="OH">Ohio (OH)</option>
-            <option value="OK">Oklahoma (OK)</option>
-            <option value="OR">Oregon (OR)</option>
-            <option value="PA">Pennsylvania (PA)</option>
-            <option value="RI">Rhode Island (RI)</option>
-            <option value="SC">South Carolina (SC)</option>
-            <option value="SD">South Dakota (SD)</option>
-            <option value="TN">Tennessee (TN)</option>
-            <option value="TX">Texas (TX)</option>
-            <option value="UT">Utah (UT)</option>
-            <option value="VT">Vermont (VT)</option>
-            <option value="VA">Virginia (VA)</option>
-            <option value="WA">Washington (WA)</option>
-            <option value="WV">West Virginia (WV)</option>
-            <option value="WI">Wisconsin (WI)</option>
-            <option value="WY">Wyoming (WY)</option>
-        </select><br><br>
-        <input type="submit" value="Search">
-    </form>
+    <div class="container mt-4">
+        <h1 class="mb-4">Judicial Opinion Search</h1>
+        <p>
+            <a class="btn btn-secondary" data-bs-toggle="collapse" href="#howToUse" role="button" aria-expanded="false" aria-controls="howToUse">
+                About this tool
+            </a>
+        </p>
+        <div class="collapse" id="howToUse">
+            <div class="card card-body">
+                <p>Search by semantics and keywords. A semantic query is required.</p>
+                <br>
+                <p>Semantic search looks for similar <i>meaning</i> to your query, and keyword search looks for similar <i>characters</i> (the actual letters, numbers, and symbols) to your query.</p>
+                <br>
+                <p>Opinions are provided by <a href="https://www.courtlistener.com/">CourtListener</a>.</p>
+                <br>
+                <h3>Example</h3>
+                <br>
+                <p>Say you want to look for cases that cite the <a href="https://en.wikipedia.org/wiki/Merchant_Marine_Act_of_1920">Jones Act</a>. A semantic search for "Jones Act" may return decent results, but it's not an ideal semantic query.</p>
+                <br>           
+                <p>Semantic search compares the <i>meaning</i> of your query with results, not the exact words. This means your query should be a <i>concept</i>, <i>idea</i>, or <i>definition</i>. For a named term or entity, this is usually preferable to the name itself. So, if you want to search for the Jones Act applied to workers' compensation, a semantic search for "seaman workers compensation" returns more accurate results. However, the results may not always explicitly mention the term "Jones Act."</p>
+                <br>
+                <p>A more powerful method is to <strong>combine</strong> semantic and keyword queries in a single search. A keyword search for "Jones Act" and a semantic search for "workers compensation" returns opinions that explicitly mention the Act <i>and</i> are related to workers compensation.</p>
+            </div>
+            <br>
+        </div>
+        <form method="POST">
+            <div class="row mb-3">
+                <div class="col">
+                    <input required type="text" class="form-control" name="semantic" placeholder="Semantic Search" value="{{ form_data.query if form_data else '' }}">
+                </div>
+                <div class="col">
+                    <input type="text" class="form-control" name="keyword" placeholder="Keyword Search" value="{{ form_data.keyword_query if form_data else '' }}">
+                </div>
+                <div class="col">
+                    <button type="submit" class="btn btn-primary">Search</button>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-3">
+                    <h4>Filters</h4>
+                    <div class="mb-3">
+                        <label for="after_date" class="form-label">After Date</label>
+                        <input type="date" class="form-control" name="after_date" id="after_date" value="{{ form_data.after_date if form_data else '' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="before_date" class="form-label">Before Date</label>
+                        <input type="date" class="form-control" name="before_date" id="before_date" value="{{ form_data.before_date if form_data else '' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Jurisdiction</label>
+                        <div class="mb-2">
+                            <button type="button" class="btn btn-sm btn-outline-primary me-2" id="checkAllJurisdictions">Check All</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="clearAllJurisdictions">Clear All</button>
+                        </div>
+                        {% for jurisdiction in jurisdictions %}
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="jurisdictions" value="{{ jurisdiction.value }}" id="jurisdiction-{{ loop.index }}"
+                                {% if not form_data or (form_data and jurisdiction.value in form_data.jurisdictions) or (form_data and not form_data.jurisdictions) %}checked{% endif %}>
+                            <label class="form-check-label" for="jurisdiction-{{ loop.index }}">
+                                {{ jurisdiction.display }}
+                            </label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-9">
+                    <h4>Results</h4>
+                    {% if results %}
+                        {% for result in results %}
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ loop.index }}. {{ result.case_name }}</h5>
+                                    <h6 class="card-subtitle mb-2">{{ result.court_name }}</h6>
+                                    <h6 class="card-subtitle mb-2 text-muted">{{ result.author_name }} | {{ result.date_filed }}</h6>
+                                    <p class="card-text"><strong>Match Score</strong>: {{ result.match_score }}</p>
+                                    {% if result.url != "unavailable" %}
+                                        <p class="card-text"><strong>Full text link</strong>: <a href="{{ result.url }}">{{ result.url }}</a></p>
+                                    {% else %}
+                                        <p class="card-text"><strong>Full text link</strong>: unavailable</p>
+                                    {% endif %}
+                                    {% if result.ai_summary != "unavailable" %}
+                                        <p class="card-text"><strong>AI summary</strong>: {{ result.ai_summary }}</p>
+                                    {% else %}
+                                        <button class="btn btn-secondary get-summary {{ result.opinion_id }}" data-id="{{ result.opinion_id }}">Get Summary</button>
+                                        <div class="mt-2 summary-{{ result.opinion_id }}"></div>
+                                    {% endif %}
+                                    <div class="mt-2">
+                                        <strong>Matched Excerpt:</strong>
+                                        <div style="border: 1px solid #737373; overflow-y: scroll; max-height: 300px;">{{ result.text | safe }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p>No results found.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </form>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <script>
+        $(document).ready(function() {
+            $('.get-summary').click(function() {
+                var button = $(this);
+                var opinion_id = button.data('id');
+                var summaryDiv = $('.summary-' + opinion_id);
+                var allButtons = $('.' + opinion_id);
+
+                allButtons.prop('disabled', true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Loading...');
+                
+                $.ajax({
+                    url: "/summary/" + opinion_id,
+                    method: 'GET',
+                    success: function(data) {
+                        summaryDiv.html('<p class="card-text"><strong>AI summary</strong>: ' + data + '</p>');
+                        allButtons.remove();
+                    },
+                    error: function() {
+                        allButtons.prop('disabled', false).text('Get Summary');
+                        summaryDiv.html('Error fetching summary. Please try again.');
+                    }
+                });
+            });
+
+            // Check All Jurisdictions
+            $('#checkAllJurisdictions').click(function() {
+                $('.form-check-input').prop('checked', true);
+            });
+
+            // Clear All Jurisdictions
+            $('#clearAllJurisdictions').click(function() {
+                $('.form-check-input').prop('checked', false);
+            });
+        });
+    </script>
 </body>
 </html>
