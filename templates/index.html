@@ -28,6 +28,9 @@
                 About this tool
             </a>
         </p>
+        {% if opinion_count > 0 %}
+            <h6>There are currently {{ opinion_count }} opinions indexed.</h6>
+        {% endif %}
         <div class="collapse" id="howToUse">
             <div class="card card-body">
                 <p>Search by semantics and keywords. A semantic query is required.</p>
@@ -48,10 +51,10 @@
         </div>
         <form method="POST">
             <div class="row mb-3">
-                <div class="col">
+                <div class="col-md-5">
                     <input required type="text" class="form-control" name="semantic" placeholder="Semantic Search" value="{{ form_data.query if form_data else '' }}">
                 </div>
-                <div class="col">
+                <div class="col-md-5">
                     <input type="text" class="form-control" name="keyword" placeholder="Keyword Search" value="{{ form_data.keyword_query if form_data else '' }}">
                 </div>
                 <div class="col">
@@ -89,6 +92,9 @@
                 <div class="col-md-9">
                     <h4>Results</h4>
                     {% if results %}
+                        {% if results_opinion_count %}
+                            <h6>Retrieved 50 excerpts from {{ results_opinion_count }} opinions.</h6>
+                        {% endif %}
                         {% for result in results %}
                             <div class="card mb-3">
                                 <div class="card-body">

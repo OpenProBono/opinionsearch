@@ -15,6 +15,9 @@ CASE_API_ENDPOINT = "http://0.0.0.0:8080/search_opinions"
 # API endpoint for fetching AI summaries
 SUMMARY_API_ENDPOINT = "http://0.0.0.0:8080/get_opinion_summary"
 
+# API endpoint for fetching opinion count
+COUNT_API_ENDPOINT = "http://0.0.0.0:8080/get_opinion_count"
+
 JURISDICTIONS = [
     {'display': 'Federal Appellate', 'value': 'us-app'},
     {'display': 'Federal District', 'value': 'us-dis'},
@@ -75,6 +78,7 @@ JURISDICTIONS = [
 
 API_KEY = os.environ["OPB_TEST_API_KEY"]
 headers = {"X-API-KEY": API_KEY}
+ERROR_MSG = "Error searching for opinions. Please try again later."
 
 class Opinion:
 
@@ -88,6 +92,15 @@ class Opinion:
         self.date_filed = date_filed
         self.url = url
         self.match_score = match_score
+
+def get_opinion_count():
+    # get opinion count
+    response = requests.get(COUNT_API_ENDPOINT, headers=headers)
+    if response.status_code == 200:
+        response_json = response.json()
+        if "opinion_count" in response_json:
+            return response_json["opinion_count"]
+    return -1
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -107,14 +120,23 @@ def index():
             "before_date": before_date,
             "after_date": after_date,
             "jurisdictions": req_jurisdics,
-            "k": 100
+            "k": 50
         }
         response = requests.post(CASE_API_ENDPOINT, headers=headers, json=params)
         # change this back to send the selected jurisdictions back to the front end
         params['jurisdictions'] = jurisdictions
         if response.status_code == 200:
             response_json = response.json()
+            if "results" not in response_json:
+                return ERROR_MSG
             opinions = response_json["results"]
+            # get results_opinion_count
+            opinion_ids = set()
+            for opinion in opinions:
+                if opinion["entity"]["metadata"]["id"] not in opinion_ids:
+                    opinion_ids.add(opinion["entity"]["metadata"]["id"])
+            results_opinion_count = len(opinion_ids)
+            # format opinions
             formatted_opinions = []
             for opinion in opinions:
                 match_score = round(max([0, (2 - opinion['distance']) / 2]), 5)
@@ -170,10 +192,21 @@ def index():
                     "url": url,
                     "match_score": match_score,
                 }))
-            return render_template('index.html', results=formatted_opinions, form_data=params, jurisdictions=JURISDICTIONS)
+            # get opinion count after search on POST
+            opinion_count = get_opinion_count()
+            return render_template(
+                'index.html',
+                results=formatted_opinions,
+                form_data=params,
+                jurisdictions=JURISDICTIONS,
+                opinion_count=opinion_count,
+                results_opinion_count=results_opinion_count,
+            )
         else:
-            return "Error searching for opinions"
-    return render_template('index.html', jurisdictions=JURISDICTIONS)
+            return ERROR_MSG
+    # get opinion count after search on GET
+    opinion_count = get_opinion_count()
+    return render_template('index.html', jurisdictions=JURISDICTIONS, opinion_count=opinion_count)
 
 @app.route("/summary/<opinion_id>")
 def fetch_summary(opinion_id):
