@@ -94,7 +94,7 @@
                     <h4>Results</h4>
                     {% if results %}
                         {% if results_opinion_count %}
-                            <h6>Retrieved 50 excerpts from {{ results_opinion_count }} opinions.</h6>
+                            <h6>Retrieved {{ results|length }} excerpts from {{ results_opinion_count }} opinions.</h6>
                         {% endif %}
                         {% for result in results %}
                             <div class="card mb-3">
