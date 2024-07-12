@@ -119,9 +119,9 @@ def index():
             "before_date": before_date,
             "after_date": after_date,
             "jurisdictions": req_jurisdics,
-            "k": 20
+            "k": 10
         }
-        response = requests.post(CASE_ENDPOINT, headers=headers, json=params)
+        response = requests.post(CASE_ENDPOINT, headers=headers, json=params, timeout=90)
         # change this back to send the selected jurisdictions back to the front end
         params['jurisdictions'] = jurisdictions
         if response.status_code == 200:
