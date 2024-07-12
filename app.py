@@ -9,14 +9,10 @@ app = Flask(__name__)
 
 COURTLISTENER = "https://www.courtlistener.com"
 
-# API endpoint for searching cases
-CASE_API_ENDPOINT = "http://0.0.0.0:8080/search_opinions"
-
-# API endpoint for fetching AI summaries
-SUMMARY_API_ENDPOINT = "http://0.0.0.0:8080/get_opinion_summary"
-
-# API endpoint for fetching opinion count
-COUNT_API_ENDPOINT = "http://0.0.0.0:8080/get_opinion_count"
+API_URL = "http://0.0.0.0:8080"
+CASE_ENDPOINT = API_URL + "/search_opinions"
+SUMMARY_ENDPOINT = API_URL + "/get_opinion_summary"
+COUNT_ENDPOINT = API_URL + "/get_opinion_count"
 
 JURISDICTIONS = [
     {'display': 'Federal Appellate', 'value': 'us-app'},
@@ -95,7 +91,10 @@ class Opinion:
 
 def get_opinion_count():
     # get opinion count
-    response = requests.get(COUNT_API_ENDPOINT, headers=headers)
+    try:
+        response = requests.get(COUNT_ENDPOINT, headers=headers, timeout=5)
+    except requests.exceptions.Timeout:
+        return -1
     if response.status_code == 200:
         response_json = response.json()
         if "opinion_count" in response_json:
@@ -122,7 +121,7 @@ def index():
             "jurisdictions": req_jurisdics,
             "k": 50
         }
-        response = requests.post(CASE_API_ENDPOINT, headers=headers, json=params)
+        response = requests.post(CASE_ENDPOINT, headers=headers, json=params)
         # change this back to send the selected jurisdictions back to the front end
         params['jurisdictions'] = jurisdictions
         if response.status_code == 200:
@@ -211,13 +210,10 @@ def index():
 @app.route("/summary/<opinion_id>")
 def fetch_summary(opinion_id):
     # Make API call to retrieve AI summary
-    response = requests.get(SUMMARY_API_ENDPOINT, headers=headers, params={"opinion_id": opinion_id})
+    response = requests.get(SUMMARY_ENDPOINT, headers=headers, params={"opinion_id": opinion_id})
 
     if response.status_code == 200:
         summary = response.json()["result"]
         return summary
     else:
         return "Error fetching summary from OPB API", 500
-
-if __name__ == "__main__":
-    app.run(debug=True)
