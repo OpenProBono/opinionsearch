@@ -119,7 +119,7 @@ def index():
             "before_date": before_date,
             "after_date": after_date,
             "jurisdictions": req_jurisdics,
-            "k": 50
+            "k": 20
         }
         response = requests.post(CASE_ENDPOINT, headers=headers, json=params)
         # change this back to send the selected jurisdictions back to the front end
