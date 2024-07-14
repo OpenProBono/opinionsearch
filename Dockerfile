@@ -16,4 +16,4 @@ COPY templates /api/templates
 
 COPY app.py /api/app.py
 
-CMD gunicorn -w 4  app:app
+CMD gunicorn -w 4 -t 120 app:app
