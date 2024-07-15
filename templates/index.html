@@ -50,7 +50,7 @@
             </div>
             <br>
         </div>
-        <form method="POST">
+        <form id="searchForm" method="POST">
             <div class="row mb-3">
                 <div class="col-md-5">
                     <input required type="text" class="form-control" name="semantic" placeholder="Semantic Search" value="{{ form_data.query if form_data else '' }}">
@@ -59,7 +59,7 @@
                     <input type="text" class="form-control" name="keyword" placeholder="Keyword Search" value="{{ form_data.keyword_query if form_data else '' }}">
                 </div>
                 <div class="col">
-                    <button type="submit" class="btn btn-primary">Search</button>
+                    <button type="submit" class="btn btn-primary" id="searchButton">Search</button>
                 </div>
             </div>
             <div class="row">
@@ -93,8 +93,8 @@
                 <div class="col-md-9">
                     <h4>Results</h4>
                     {% if results %}
-                        {% if results_opinion_count %}
-                            <h6>Retrieved {{ results|length }} excerpts from {{ results_opinion_count }} opinions.</h6>
+                        {% if results_opinion_count and elapsed %}
+                            <h6>Retrieved {{ results|length }} excerpts from {{ results_opinion_count }} opinions in {{ elapsed }} seconds.</h6>
                         {% endif %}
                         {% for result in results %}
                             <div class="card mb-3">
@@ -138,7 +138,7 @@
                 var summaryDiv = $('.summary-' + opinion_id);
                 var allButtons = $('.' + opinion_id);
 
-                allButtons.prop('disabled', true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Loading...');
+                allButtons.prop('disabled', true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Summarizing...');
                 
                 $.ajax({
                     url: "/summary/" + opinion_id,
@@ -162,6 +162,15 @@
             // Clear All Jurisdictions
             $('#clearAllJurisdictions').click(function() {
                 $('.form-check-input').prop('checked', false);
+            });
+
+            // Loading animation for the search button
+            $("#searchForm").submit(function(event) {
+                event.preventDefault();
+                let button = $("#searchButton");
+                button.prop('disabled', true)
+                    .html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Searching...');
+                event.target.submit();
             });
         });
     </script>

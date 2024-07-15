@@ -3,6 +3,8 @@ from flask import Flask, request, render_template
 import requests
 from datetime import datetime
 import os
+import re
+import time
 
 
 app = Flask(__name__)
@@ -101,9 +103,50 @@ def get_opinion_count():
             return response_json["opinion_count"]
     return -1
 
+def format_str(text: str) -> str:
+    """Replace '\\n\\n' and with <br> and ¶ with '<br>¶'."""
+    def replace_with_br(match):
+        return f'<br>{match.group(0)}'
+
+    pattern = r'\s(\S*¶\S*)'
+    # \s matches any whitespace character
+    # (\S*¶\S*) is a capture group that matches:
+    #   - \S* : zero or more non-whitespace characters
+    #   - ¶ : the paragraph character
+    return re.sub(pattern, replace_with_br, text.replace("\n\n","<br>"))
+
+def mark_keyword(text: str, keyword: str) -> str:
+    """Add <mark> tags around keyword matches in text."""
+    # Replace wildcard characters with regex patterns
+    regex_pattern = re.escape(keyword).replace('_', '.')
+    
+    # Find all occurrences of the pattern in the main string
+    matches = re.finditer(regex_pattern, text)
+    
+    # Find all occurrences of the pattern in the main string
+    matches = list(re.finditer(regex_pattern, text))
+    
+    # If no matches found, return the original string
+    if not matches:
+        return text
+    
+    # Create a new string with <mark> tags around matches
+    result = []
+    last_end = 0
+    for match in matches:
+        start, end = match.span()
+        result.append(text[last_end:start])
+        result.append(f"<mark>{text[start:end]}</mark>")
+        last_end = end
+    
+    # Append any remaining part of the string
+    result.append(text[last_end:])
+    return ''.join(result)
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
+        start = time.time()
         keyword = request.form.get('keyword')
         semantic = request.form.get('semantic')
         before_date = request.form.get('before_date')
@@ -164,6 +207,7 @@ def index():
                 else:
                     ai_summary = "unavailable"
                 # matched excerpt and full text link
+                opinion["entity"]["text"] = format_str(opinion["entity"]["text"])
                 if opinion["source"] == "courtlistener":
                     text = BeautifulSoup(opinion["entity"]["text"], features="html.parser")
                     for link in text.find_all("a"):
@@ -177,6 +221,8 @@ def index():
                 else: # cap
                     text = f"""<p>{opinion["entity"]["text"]}</p>"""
                     url = "unavailable"
+                if keyword is not None:
+                    text = mark_keyword(text, keyword)
                 # date filed
                 date_filed = datetime.strptime(opinion["entity"]["metadata"]["date_filed"], "%Y-%m-%d")
                 date_filed = date_filed.strftime("%B %d, %Y")
@@ -193,6 +239,8 @@ def index():
                 }))
             # get opinion count after search on POST
             opinion_count = get_opinion_count()
+            end = time.time()
+            elapsed = str(round(end - start, 5))
             return render_template(
                 'index.html',
                 results=formatted_opinions,
@@ -200,6 +248,7 @@ def index():
                 jurisdictions=JURISDICTIONS,
                 opinion_count=opinion_count,
                 results_opinion_count=results_opinion_count,
+                elapsed=elapsed,
             )
         else:
             return ERROR_MSG
