@@ -221,7 +221,7 @@ def index():
                 else: # cap
                     text = f"""<p>{opinion["entity"]["text"]}</p>"""
                     url = "unavailable"
-                if keyword is not None:
+                if keyword:
                     text = mark_keyword(text, keyword)
                 # date filed
                 date_filed = datetime.strptime(opinion["entity"]["metadata"]["date_filed"], "%Y-%m-%d")
