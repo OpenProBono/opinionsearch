@@ -101,18 +101,30 @@
                                 <div class="card-body">
                                     <h5 class="card-title">{{ loop.index }}. {{ result.case_name }}</h5>
                                     <h6 class="card-subtitle mb-2">{{ result.court_name }}</h6>
-                                    <h6 class="card-subtitle mb-2 text-muted">{{ result.author_name }} | {{ result.date_filed }}</h6>
+                                    <h6 class="card-subtitle mb-2 text-muted">
+                                        {{ result.author_name }} | {{ result.date_filed }}
+                                        {% if result.date_blocked %}
+                                            | Blocked {{ result.date_blocked }}
+                                        {% endif %}
+                                    </h6>
                                     <p class="card-text"><strong>Match Score</strong>: {{ result.match_score }}</p>
-                                    {% if result.url != "unavailable" %}
-                                        <p class="card-text"><strong>Full text link</strong>: <a href="{{ result.url }}">{{ result.url }}</a></p>
-                                    {% else %}
-                                        <p class="card-text"><strong>Full text link</strong>: unavailable</p>
+                                    {% if result.url %}
+                                        <p class="card-text"><strong>CourtListener link</strong>: <a href="{{ result.url }}">{{ result.url }}</a></p>
                                     {% endif %}
-                                    {% if result.ai_summary != "unavailable" %}
+                                    {% if result.download_url %}
+                                        <p class="card-text"><strong>Download link</strong>: <a href="{{ result.download_url }}">{{ result.download_url }}</a></p>
+                                    {% endif %}
+                                    {% if result.summary %}
+                                        <p class="card-text"><strong>CourtListener summary</strong>: {{ result.summary }}</p>
+                                    {% endif %}
+                                    {% if result.ai_summary %}
                                         <p class="card-text"><strong>AI summary</strong>: {{ result.ai_summary }}</p>
                                     {% else %}
                                         <button class="btn btn-secondary get-summary {{ result.opinion_id }}" data-id="{{ result.opinion_id }}">Get Summary</button>
                                         <div class="mt-2 summary-{{ result.opinion_id }}"></div>
+                                    {% endif %}
+                                    {% if result.other_dates %}
+                                        <p class="card-text"><strong>Other dates</strong>: {{ result.other_dates }}</p>
                                     {% endif %}
                                     <div class="mt-2">
                                         <strong>Matched Excerpt:</strong>

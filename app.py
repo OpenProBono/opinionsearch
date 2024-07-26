@@ -1,4 +1,3 @@
-from bs4 import BeautifulSoup
 from flask import Flask, request, render_template
 import requests
 from datetime import datetime
@@ -11,7 +10,7 @@ app = Flask(__name__)
 
 COURTLISTENER = "https://www.courtlistener.com"
 
-API_URL = "http://0.0.0.0:8080"
+API_URL = os.environ["OPB_API_URL"]
 CASE_ENDPOINT = API_URL + "/search_opinions"
 SUMMARY_ENDPOINT = API_URL + "/get_opinion_summary"
 COUNT_ENDPOINT = API_URL + "/get_opinion_count"
@@ -80,7 +79,11 @@ ERROR_MSG = "Error searching for opinions. Please try again later."
 
 class Opinion:
 
-    def __init__(self, opinion_id: int, case_name: str, court_name: str, author_name: str, ai_summary: str, text: str, date_filed: str, url: str, match_score: float) -> None:
+    def __init__(
+        self, opinion_id: int, case_name: str, court_name: str, author_name: str, ai_summary: str,
+        text: str, date_filed: str, url: str, date_blocked: str, other_dates: str, summary: str,
+        download_url: str, match_score: float
+    ) -> None:
         self.opinion_id = opinion_id
         self.case_name = case_name
         self.court_name = court_name
@@ -89,6 +92,10 @@ class Opinion:
         self.text = text
         self.date_filed = date_filed
         self.url = url
+        self.date_blocked = date_blocked
+        self.other_dates = other_dates
+        self.summary = summary
+        self.download_url = download_url
         self.match_score = match_score
 
 def get_opinion_count():
@@ -182,52 +189,36 @@ def index():
             formatted_opinions = []
             for opinion in opinions:
                 match_score = round(max([0, (2 - opinion['distance']) / 2]), 5)
-                # case name
-                if "case_name" in opinion["entity"]["metadata"]:
-                    case_name = opinion["entity"]["metadata"]["case_name"]
+                metadata = opinion["entity"]["metadata"]
+                if "case_name" in metadata:
+                    case_name = metadata["case_name"]
                     if len(case_name) > 200:
                         case_name = case_name[:200] + "..."
-                else:
-                    case_name = "Unknown Case"
-                # court name
-                if "court_name" in opinion["entity"]["metadata"]:
-                    court_name = opinion["entity"]["metadata"]["court_name"]
-                else:
-                    court_name = "Unknown Court"
-                # author name
-                if "author_name" in opinion["entity"]["metadata"]:
-                    author_name = opinion["entity"]["metadata"]["author_name"]
-                elif "author_str" in opinion["entity"]["metadata"]:
-                    author_name = opinion["entity"]["metadata"]["author_str"]
-                else:
-                    author_name = "Unknown Author"
-                # AI summary
-                if "ai_summary" in opinion["entity"]["metadata"]:
-                    ai_summary = opinion["entity"]["metadata"]["ai_summary"]
-                else:
-                    ai_summary = "unavailable"
-                # matched excerpt and full text link
-                opinion["entity"]["text"] = format_str(opinion["entity"]["text"])
-                if opinion["source"] == "courtlistener":
-                    text = BeautifulSoup(opinion["entity"]["text"], features="html.parser")
-                    for link in text.find_all("a"):
-                        if "href" in link.attrs:
-                            href = link.attrs["href"]
-                        if href.startswith("/"):
-                            href = COURTLISTENER + href
-                            link.attrs["href"] = href
-                    text = text.prettify()
-                    url = COURTLISTENER + opinion["entity"]["metadata"]["absolute_url"]
-                else: # cap
-                    text = f"""<p>{opinion["entity"]["text"]}</p>"""
-                    url = "unavailable"
+                court_name = metadata["court_name"] if "court_name" in metadata else None
+                author_name = metadata["author_name"] if "author_name" in metadata else None
+                ai_summary = metadata["ai_summary"] if "ai_summary" in metadata else None
+                # CL summary
+                summary = metadata["summary"] if "summary" in metadata else None
+                download_url = metadata["download_url"] if "download_url" in metadata else None
+                # matched excerpt
+                text = format_str(opinion["entity"]["text"])
+                text = f"""<p>{text}</p>"""
                 if keyword:
                     text = mark_keyword(text, keyword)
-                # date filed
-                date_filed = datetime.strptime(opinion["entity"]["metadata"]["date_filed"], "%Y-%m-%d")
-                date_filed = date_filed.strftime("%B %d, %Y")
+                # full text link
+                if "slug" in metadata:
+                    url = COURTLISTENER + f"/opinion/{metadata['cluster_id']}/{metadata['slug']}/"
+                else:
+                    url = None
+                # dates
+                date_filed = datetime.strptime(metadata["date_filed"], "%Y-%m-%d").strftime("%B %d, %Y")
+                other_dates = metadata["other_dates"] if "other_dates" in metadata else None
+                if "date_blocked" in metadata:
+                    date_blocked = datetime.strptime(metadata["date_blocked"], "%Y-%m-%d").strftime("%B %d, %Y")
+                else:
+                    date_blocked = None
                 formatted_opinions.append(Opinion(**{
-                    "opinion_id": opinion["entity"]["metadata"]["id"],
+                    "opinion_id": metadata["id"],
                     "case_name": case_name,
                     "court_name": court_name,
                     "author_name": author_name,
@@ -235,10 +226,14 @@ def index():
                     "text": text,
                     "date_filed": date_filed,
                     "url": url,
+                    "download_url": download_url,
+                    "date_blocked": date_blocked,
+                    "other_dates": other_dates,
+                    "summary": summary,
                     "match_score": match_score,
                 }))
             # get opinion count after search on POST
-            opinion_count = get_opinion_count()
+            # opinion_count = get_opinion_count()
             end = time.time()
             elapsed = str(round(end - start, 5))
             return render_template(
@@ -246,15 +241,18 @@ def index():
                 results=formatted_opinions,
                 form_data=params,
                 jurisdictions=JURISDICTIONS,
-                opinion_count=opinion_count,
+                opinion_count=-1,
                 results_opinion_count=results_opinion_count,
                 elapsed=elapsed,
             )
         else:
             return ERROR_MSG
-    # get opinion count after search on GET
-    opinion_count = get_opinion_count()
-    return render_template('index.html', jurisdictions=JURISDICTIONS, opinion_count=opinion_count)
+    # opinion_count = get_opinion_count()
+    return render_template(
+        'index.html',
+        jurisdictions=JURISDICTIONS,
+        opinion_count=-1,
+    )
 
 @app.route("/summary/<opinion_id>")
 def fetch_summary(opinion_id):
@@ -262,7 +260,9 @@ def fetch_summary(opinion_id):
     response = requests.get(SUMMARY_ENDPOINT, headers=headers, params={"opinion_id": opinion_id})
 
     if response.status_code == 200:
-        summary = response.json()["result"]
-        return summary
+        response_json = response.json()
+        if "result" not in response_json:
+            return "Error fetching summary from OPB API", 500
+        return response_json["result"]
     else:
         return "Error fetching summary from OPB API", 500
