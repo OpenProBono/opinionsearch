@@ -122,33 +122,13 @@ def format_str(text: str) -> str:
     #   - ¶ : the paragraph character
     return re.sub(pattern, replace_with_br, text.replace("\n\n","<br>"))
 
-def mark_keyword(text: str, keyword: str) -> str:
-    """Add <mark> tags around keyword matches in text."""
-    # Replace wildcard characters with regex patterns
-    regex_pattern = re.escape(keyword).replace('_', '.')
+def mark_keyword(text, keyword):
+    pattern = re.compile(re.escape(keyword), re.IGNORECASE)
     
-    # Find all occurrences of the pattern in the main string
-    matches = re.finditer(regex_pattern, text)
+    def replace_func(match):
+        return f'<mark>{match.group()}</mark>'
     
-    # Find all occurrences of the pattern in the main string
-    matches = list(re.finditer(regex_pattern, text))
-    
-    # If no matches found, return the original string
-    if not matches:
-        return text
-    
-    # Create a new string with <mark> tags around matches
-    result = []
-    last_end = 0
-    for match in matches:
-        start, end = match.span()
-        result.append(text[last_end:start])
-        result.append(f"<mark>{text[start:end]}</mark>")
-        last_end = end
-    
-    # Append any remaining part of the string
-    result.append(text[last_end:])
-    return ''.join(result)
+    return pattern.sub(replace_func, text)
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
