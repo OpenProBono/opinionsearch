@@ -98,17 +98,6 @@ class Opinion:
         self.download_url = download_url
         self.match_score = match_score
 
-def get_opinion_count():
-    # get opinion count
-    try:
-        response = requests.get(COUNT_ENDPOINT, headers=headers, timeout=5)
-    except requests.exceptions.Timeout:
-        return -1
-    if response.status_code == 200:
-        response_json = response.json()
-        if "opinion_count" in response_json:
-            return response_json["opinion_count"]
-    return -1
 
 def format_str(text: str) -> str:
     """Replace '\\n\\n' and with <br> and ¶ with '<br>¶'."""
@@ -153,7 +142,7 @@ def index():
         }
         response = requests.post(CASE_ENDPOINT, headers=headers, json=params, timeout=90)
         # change this back to send the selected jurisdictions back to the front end
-        params['jurisdictions'] = jurisdictions
+        params["jurisdictions"] = jurisdictions
         if response.status_code == 200:
             response_json = response.json()
             if "results" not in response_json:
@@ -187,6 +176,8 @@ def index():
                 # full text link
                 if "slug" in metadata:
                     url = COURTLISTENER + f"/opinion/{metadata['cluster_id']}/{metadata['slug']}/"
+                elif "absolute_url" in metadata:
+                    url = COURTLISTENER + metadata["absolute_url"]
                 else:
                     url = None
                 # dates
@@ -211,27 +202,33 @@ def index():
                     "summary": summary,
                     "match_score": match_score,
                 }))
-            # get opinion count after search on POST
-            # opinion_count = get_opinion_count()
             end = time.time()
             elapsed = str(round(end - start, 5))
             return render_template(
-                'index.html',
+                "index.html",
                 results=formatted_opinions,
                 form_data=params,
                 jurisdictions=JURISDICTIONS,
-                opinion_count=-1,
                 results_opinion_count=results_opinion_count,
                 elapsed=elapsed,
             )
         else:
             return ERROR_MSG
-    # opinion_count = get_opinion_count()
-    return render_template(
-        'index.html',
-        jurisdictions=JURISDICTIONS,
-        opinion_count=-1,
-    )
+    return render_template("index.html", jurisdictions=JURISDICTIONS)
+
+
+@app.route("/opinion_count")
+def get_opinion_count() -> int:
+    try:
+        response = requests.get(COUNT_ENDPOINT, headers=headers, timeout=90)
+    except requests.exceptions.Timeout:
+        return {"message": "Failure: timeout"}
+    if response.status_code == 200:
+        response_json = response.json()
+        if "opinion_count" in response_json:
+            return {"message": "Success", "opinion_count": response_json["opinion_count"]}
+    return {"message": "Failure: exception in request or bad response code"}
+
 
 @app.route("/summary/<opinion_id>")
 def fetch_summary(opinion_id):

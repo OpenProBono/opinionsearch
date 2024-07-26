@@ -29,9 +29,7 @@
                 About this tool
             </a>
         </p>
-        {% if opinion_count > 0 %}
-            <h6>There are currently {{ opinion_count }} opinions indexed.</h6>
-        {% endif %}
+        <h6 id="opinion-count">Indexing opinions...</h6>
         <div class="collapse" id="howToUse">
             <div class="card card-body">
                 <p>Search by semantics and keywords. A semantic query is required.</p>
@@ -149,6 +147,21 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
     <script>
         $(document).ready(function() {
+            // call opinion_count() endpoint and add the result to the page
+            $.ajax({
+                url: '/opinion_count',
+                method: 'GET',
+                success: function(data) {
+                    if (data["message"] == "Success")
+                        $('#opinion-count').html(`There are currently ${data["opinion_count"]} opinions indexed.`);
+                    else
+                        $('#opinion-count').html(`Unable to index opinions.`);
+                },
+                error: function(data) {
+                    $('#opinion-count').html(`Unable to index opinions.`);
+                }
+            });
+
             $('.get-summary').click(function() {
                 var button = $(this);
                 var opinion_id = button.data('id');
