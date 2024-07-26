@@ -190,11 +190,10 @@ def index():
             for opinion in opinions:
                 match_score = round(max([0, (2 - opinion['distance']) / 2]), 5)
                 metadata = opinion["entity"]["metadata"]
-                if "case_name" in metadata:
-                    case_name = metadata["case_name"]
-                    if len(case_name) > 200:
-                        case_name = case_name[:200] + "..."
-                court_name = metadata["court_name"] if "court_name" in metadata else None
+                case_name = metadata["case_name"]
+                if len(case_name) > 200:
+                    case_name = case_name[:200] + "..."
+                court_name = metadata["court_name"]
                 author_name = metadata["author_name"] if "author_name" in metadata else None
                 ai_summary = metadata["ai_summary"] if "ai_summary" in metadata else None
                 # CL summary
