@@ -19,6 +19,29 @@
             background-repeat: no-repeat;
             background-attachment: fixed;
         }
+
+        .dots::after {
+            display: inline-block;
+            animation: ellipsis 1s infinite;
+            content: "";
+            width: 1em;
+            text-align: left;
+        }
+
+        @keyframes ellipsis {
+            0% {
+                content: "";
+            }
+            25% {
+                content: ".";
+            }
+            50% {
+                content: "..";
+            }
+            75% {
+                content: "...";
+            }
+        }
     </style>
 </head>
 <body>
@@ -29,7 +52,7 @@
                 About this tool
             </a>
         </p>
-        <h6 id="opinion-count">Indexing opinions...</h6>
+        <h6 id="opinion-count">Indexing opinions<span class="dots"></span></h6>
         <div class="collapse" id="howToUse">
             <div class="card card-body">
                 <p>Search by semantics and keywords. A semantic query is required.</p>
@@ -153,7 +176,7 @@
                 method: 'GET',
                 success: function(data) {
                     if (data["message"] == "Success")
-                        $('#opinion-count').html(`There are currently ${data["opinion_count"]} opinions indexed.`);
+                        $('#opinion-count').html(`There are currently ${data["opinion_count"].toLocaleString()} opinions indexed.`);
                     else
                         $('#opinion-count').html(`Unable to index opinions.`);
                 },
