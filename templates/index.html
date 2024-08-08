@@ -80,7 +80,7 @@
                     <input type="text" class="form-control" name="keyword" placeholder="Keyword Search" value="{{ form_data.keyword_query if form_data else '' }}">
                 </div>
                 <div class="col">
-                    <button type="submit" class="btn btn-primary" id="searchButton" disabled>Search</button>
+                    <button type="submit" class="btn btn-primary" id="searchButton">Search</button>
                 </div>
             </div>
             <div class="row">
@@ -170,6 +170,8 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
     <script>
         $(document).ready(function() {
+            // disable search button until server responds
+            $('#searchButton').prop('disabled', true);
             // call opinion_count() endpoint and add the result to the page
             $.ajax({
                 url: '/opinion_count',
