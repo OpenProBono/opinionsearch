@@ -52,7 +52,7 @@
                 About this tool
             </a>
         </p>
-        <h6 id="opinion-count">Indexing opinions<span class="dots"></span></h6>
+        <h6 id="opinion-count">Please wait a minute<span class="dots"></span></h6>
         <div class="collapse" id="howToUse">
             <div class="card card-body">
                 <p>Search by semantics and keywords. A semantic query is required.</p>
@@ -80,7 +80,7 @@
                     <input type="text" class="form-control" name="keyword" placeholder="Keyword Search" value="{{ form_data.keyword_query if form_data else '' }}">
                 </div>
                 <div class="col">
-                    <button type="submit" class="btn btn-primary" id="searchButton">Search</button>
+                    <button type="submit" class="btn btn-primary" id="searchButton" disabled>Search</button>
                 </div>
             </div>
             <div class="row">
@@ -175,10 +175,12 @@
                 url: '/opinion_count',
                 method: 'GET',
                 success: function(data) {
-                    if (data["message"] == "Success")
+                    if (data["message"] == "Success") {
                         $('#opinion-count').html(`There are currently ${data["opinion_count"].toLocaleString()} opinions indexed.`);
-                    else
+                        $('#searchButton').prop('disabled', false);
+                    } else {
                         $('#opinion-count').html(`Unable to index opinions.`);
+                    }
                 },
                 error: function(data) {
                     $('#opinion-count').html(`Unable to index opinions.`);
