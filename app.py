@@ -121,7 +121,7 @@ def mark_keyword(text, keyword):
 
 def format_summary(summary):
     # Split the summary into lines
-    lines = summary.split('- ')
+    lines = summary.split('\n')
     
     # Process each line
     formatted_lines = []
@@ -130,14 +130,17 @@ def format_summary(summary):
         if not line:
             continue
         
-        # Check if the line starts with a title (wrapped in asterisks)
-        if re.match(r'^\*\*.*\*\*', line):
-            # Replace asterisks with HTML strong tags
-            line = re.sub(r'^\*\*(.*?)\*\*', r'<strong>\1</strong>', line)
-            formatted_lines.append(line)
-        else:
-            # For non-title lines, just add the line
-            formatted_lines.append(" - " + line)
+        # Check if the line contains a title (wrapped in asterisks)
+        title_match = re.search(r'\*\*(.*?)\*\*', line)
+        if title_match:
+            # Extract the title
+            title = title_match.group(1)
+            # Replace the entire **title** part with HTML strong tags
+            line = re.sub(r'\*\*.*?\*\*', f'<strong>{title}</strong>', line)
+            # Remove leading dash if present
+            line = re.sub(r'^- ?', '', line)
+        
+        formatted_lines.append(line)
     
     # Join the lines with line breaks
     formatted_content = '<br>'.join(formatted_lines)
