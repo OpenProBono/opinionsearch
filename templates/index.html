@@ -147,7 +147,7 @@
                                         <p class="card-text"><strong>CourtListener summary</strong>: {{ result.summary }}</p>
                                     {% endif %}
                                     {% if result.ai_summary %}
-                                        <p class="card-text"><strong>AI summary</strong>: {{ result.ai_summary }}</p>
+                                        <p class="card-text"><strong>AI summary</strong>: {{ result.ai_summary | safe }}</p>
                                     {% else %}
                                         <button class="btn btn-secondary get-summary {{ result.opinion_id }}" data-id="{{ result.opinion_id }}">Get Summary</button>
                                         <div class="mt-2 summary-{{ result.opinion_id }}"></div>

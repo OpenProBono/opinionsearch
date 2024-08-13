@@ -119,6 +119,32 @@ def mark_keyword(text, keyword):
     
     return pattern.sub(replace_func, text)
 
+def format_summary(summary):
+    # Split the summary into lines
+    lines = summary.split('- ')
+    
+    # Process each line
+    formatted_lines = []
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+        
+        # Check if the line starts with a title (wrapped in asterisks)
+        if re.match(r'^\*\*.*\*\*', line):
+            # Replace asterisks with HTML strong tags
+            line = re.sub(r'^\*\*(.*?)\*\*', r'<strong>\1</strong>', line)
+            formatted_lines.append(line)
+        else:
+            # For non-title lines, just add the line
+            formatted_lines.append(" - " + line)
+    
+    # Join the lines with line breaks
+    formatted_content = '<br>'.join(formatted_lines)
+    
+    # Wrap everything in a single paragraph tag
+    return f'<p>{formatted_content}</p>'
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
@@ -164,7 +190,7 @@ def index():
                     case_name = case_name[:200] + "..."
                 court_name = metadata["court_name"]
                 author_name = metadata["author_name"] if "author_name" in metadata else None
-                ai_summary = metadata["ai_summary"] if "ai_summary" in metadata else None
+                ai_summary = format_summary(metadata["ai_summary"]) if "ai_summary" in metadata else None
                 # CL summary
                 summary = metadata["summary"] if "summary" in metadata else None
                 download_url = metadata["download_url"] if "download_url" in metadata else None
@@ -239,6 +265,7 @@ def fetch_summary(opinion_id):
         response_json = response.json()
         if "result" not in response_json:
             return "Error fetching summary from OPB API", 500
-        return response_json["result"]
+        summary = response_json["result"]
+        return format_summary(summary)
     else:
         return "Error fetching summary from OPB API", 500
