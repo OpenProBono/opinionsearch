@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template
+from flask import Flask, jsonify, request, render_template
 import requests
 from datetime import datetime
 import os
@@ -14,6 +14,7 @@ API_URL = os.environ["OPB_API_URL"]
 CASE_ENDPOINT = API_URL + "/search_opinions"
 SUMMARY_ENDPOINT = API_URL + "/get_opinion_summary"
 COUNT_ENDPOINT = API_URL + "/get_opinion_count"
+FEEDBACK_ENDPOINT = API_URL + "/opinion_feedback"
 
 JURISDICTIONS = [
     {'display': 'Federal Appellate', 'value': 'us-app'},
@@ -272,3 +273,16 @@ def fetch_summary(opinion_id):
         return format_summary(summary)
     else:
         return "Error fetching summary from OPB API", 500
+
+
+@app.route("/submit-feedback", methods=["POST"])
+def submit_feedback():
+    data = request.json
+    params = {"opinion_id": data.get("opinionId"), "feedback_text": data.get("feedback")}
+    response = requests.post(FEEDBACK_ENDPOINT, headers=headers, json=params)
+    if response.status_code == 200:
+        response_json = response.json()
+        if response_json["message"] == "Success":
+            # there isn't anything to return, but indicate success
+            return jsonify({"message": "Success"})
+    return jsonify({"message": "Failure: exception in request or bad response code"})

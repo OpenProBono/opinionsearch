@@ -48,6 +48,8 @@
 <body>
     <div class="container mt-4">
         <h1 class="mb-4">Judicial Opinion Search</h1>
+        <div class="feedback-success-alert alert alert-success" role="alert" style="display:none;">Feedback submitted successfully! Thank you for your contribution.</div>
+        <div class="feedback-failed-alert alert alert-danger" role="alert" style="display:none;">An error occurred while submitting your feedback.</div>
         <p>
             <a class="btn btn-secondary" data-bs-toggle="collapse" href="#howToUse" role="button" aria-expanded="false" aria-controls="howToUse">
                 About this tool
@@ -72,102 +74,123 @@
             <br>
         </div>
         <h6 id="opinion-count">Please wait a minute<span class="dots"></span></h6>
-        <form id="searchForm" method="POST">
-            <div class="row mb-3">
-                <div class="col-md-5">
-                    <input required type="text" class="form-control" name="semantic" placeholder="Semantic Search" value="{{ form_data.query if form_data else '' }}">
-                </div>
-                <div class="col-md-5">
-                    <input type="text" class="form-control" name="keyword" placeholder="Keyword Search" value="{{ form_data.keyword_query if form_data else '' }}">
-                </div>
-                <div class="col">
-                    <button type="submit" class="btn btn-primary" id="searchButton">Search</button>
-                </div>
+        <form id="searchForm" method="POST"></form>
+        <div class="row mb-3">
+            <div class="col-md-5">
+                <input required type="text" class="form-control" name="semantic" placeholder="Semantic Search" value="{{ form_data.query if form_data else '' }}" form="searchForm">
             </div>
-            {% if results and results_opinion_count and elapsed %}
-                <h6>Retrieved {{ results|length }} excerpts from {{ results_opinion_count }} opinions in {{ elapsed }} seconds.</h6>
-            {% endif %}
-            <div class="row">
-                <div class="col-md-3">
-                    <div id="collapseTrigger" class="h4" style="cursor: pointer;">Filters <i id="collapseIcon" class="bi bi-chevron-down"></i></div>
-                    <div id="collapseContent">
-                        <div class="mb-3">
-                            <label for="after_date" class="form-label">After Date</label>
-                            <input type="date" class="form-control" name="after_date" id="after_date" value="{{ form_data.after_date if form_data else '' }}">
+            <div class="col-md-5">
+                <input type="text" class="form-control" name="keyword" placeholder="Keyword Search" value="{{ form_data.keyword_query if form_data else '' }}" form="searchForm">
+            </div>
+            <div class="col">
+                <button type="submit" class="btn btn-primary" id="searchButton" form="searchForm">Search</button>
+            </div>
+        </div>
+        {% if results and results_opinion_count and elapsed %}
+            <h6>Retrieved {{ results|length }} excerpts from {{ results_opinion_count }} opinions in {{ elapsed }} seconds.</h6>
+        {% endif %}
+        <div class="row">
+            <div class="col-md-3">
+                <div id="collapseTrigger" class="h4" style="cursor: pointer;">Filters <i id="collapseIcon" class="bi bi-chevron-down"></i></div>
+                <div id="collapseContent">
+                    <div class="mb-3">
+                        <label for="after_date" class="form-label">After Date</label>
+                        <input type="date" class="form-control" name="after_date" id="after_date" value="{{ form_data.after_date if form_data else '' }}" form="searchForm">
+                    </div>
+                    <div class="mb-3">
+                        <label for="before_date" class="form-label">Before Date</label>
+                        <input type="date" class="form-control" name="before_date" id="before_date" value="{{ form_data.before_date if form_data else '' }}" form="searchForm">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Jurisdiction</label>
+                        <div class="mb-2">
+                            <button type="button" class="btn btn-sm btn-outline-primary me-2" id="checkAllJurisdictions">Check All</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="clearAllJurisdictions">Clear All</button>
                         </div>
-                        <div class="mb-3">
-                            <label for="before_date" class="form-label">Before Date</label>
-                            <input type="date" class="form-control" name="before_date" id="before_date" value="{{ form_data.before_date if form_data else '' }}">
+                        {% for jurisdiction in jurisdictions %}
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="jurisdictions" value="{{ jurisdiction.value }}" id="jurisdiction-{{ loop.index }}" form="searchForm" 
+                                {% if not form_data or (form_data and jurisdiction.value in form_data.jurisdictions) or (form_data and not form_data.jurisdictions) %}checked{% endif %}>
+                            <label class="form-check-label" for="jurisdiction-{{ loop.index }}">
+                                {{ jurisdiction.display }}
+                            </label>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label">Jurisdiction</label>
-                            <div class="mb-2">
-                                <button type="button" class="btn btn-sm btn-outline-primary me-2" id="checkAllJurisdictions">Check All</button>
-                                <button type="button" class="btn btn-sm btn-outline-secondary" id="clearAllJurisdictions">Clear All</button>
-                            </div>
-                            {% for jurisdiction in jurisdictions %}
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" name="jurisdictions" value="{{ jurisdiction.value }}" id="jurisdiction-{{ loop.index }}"
-                                    {% if not form_data or (form_data and jurisdiction.value in form_data.jurisdictions) or (form_data and not form_data.jurisdictions) %}checked{% endif %}>
-                                <label class="form-check-label" for="jurisdiction-{{ loop.index }}">
-                                    {{ jurisdiction.display }}
-                                </label>
-                            </div>
-                            {% endfor %}
-                        </div>
+                        {% endfor %}
                     </div>
                 </div>
-                <div class="col-md-9">
-                    <h4>Results</h4>
-                    {% if results %}
-                        {% for result in results %}
-                            <div class="card mb-3">
-                                <div class="card-body">
+            </div>
+            <div class="col-md-9">
+                <h4>Results</h4>
+                {% if results %}
+                    {% for result in results %}
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start">
                                     <h5 class="card-title">{{ loop.index }}. {{ result.case_name }}</h5>
-                                    <h6 class="card-subtitle mb-2">{{ result.court_name }}</h6>
-                                    <h6 class="card-subtitle mb-2 text-muted">
-                                        {% if result.author_name %}
-                                            {{ result.author_name }}
-                                        {% else %}
-                                        Unknown Author
-                                        {% endif %}
-                                        | {{ result.date_filed }}
-                                        {% if result.date_blocked %}
-                                            | Blocked {{ result.date_blocked }}
-                                        {% endif %}
-                                    </h6>
-                                    <p class="card-text"><strong>Match Score</strong>: {{ result.match_score }}</p>
-                                    {% if result.url %}
-                                        <p class="card-text"><strong>CourtListener link</strong>: <a href="{{ result.url }}">{{ result.url }}</a></p>
-                                    {% endif %}
-                                    {% if result.download_url %}
-                                        <p class="card-text"><strong>Download link</strong>: <a href="{{ result.download_url }}">{{ result.download_url }}</a></p>
-                                    {% endif %}
-                                    {% if result.summary %}
-                                        <p class="card-text"><strong>CourtListener summary</strong>: {{ result.summary }}</p>
-                                    {% endif %}
-                                    {% if result.ai_summary %}
-                                        <p class="card-text"><strong>AI summary</strong>: {{ result.ai_summary | safe }}</p>
+                                    <button type="button" class="btn btn-sm btn-outline-warning" data-bs-toggle="modal" data-bs-target="#feedbackModal{{ result.opinion_id }}"><i class="bi bi-flag"></i></button>
+                                </div>
+                                <h6 class="card-subtitle mb-2">{{ result.court_name }}</h6>
+                                <h6 class="card-subtitle mb-2 text-muted">
+                                    {% if result.author_name %}
+                                        {{ result.author_name }}
                                     {% else %}
-                                        <button class="btn btn-secondary get-summary {{ result.opinion_id }}" data-id="{{ result.opinion_id }}">Get Summary</button>
-                                        <div class="mt-2 summary-{{ result.opinion_id }}"></div>
+                                    Unknown Author
                                     {% endif %}
-                                    {% if result.other_dates %}
-                                        <p class="card-text"><strong>Other dates</strong>: {{ result.other_dates }}</p>
+                                    | {{ result.date_filed }}
+                                    {% if result.date_blocked %}
+                                        | Blocked {{ result.date_blocked }}
                                     {% endif %}
-                                    <div class="mt-2">
-                                        <strong>Matched Excerpt:</strong>
-                                        <div style="border: 1px solid #737373; overflow-y: scroll; max-height: 300px;">{{ result.text | safe }}</div>
+                                </h6>
+                                <p class="card-text"><strong>Match Score</strong>: {{ result.match_score }}</p>
+                                {% if result.url %}
+                                    <p class="card-text"><strong>CourtListener link</strong>: <a href="{{ result.url }}">{{ result.url }}</a></p>
+                                {% endif %}
+                                {% if result.download_url %}
+                                    <p class="card-text"><strong>Download link</strong>: <a href="{{ result.download_url }}">{{ result.download_url }}</a></p>
+                                {% endif %}
+                                {% if result.summary %}
+                                    <p class="card-text"><strong>CourtListener summary</strong>: {{ result.summary }}</p>
+                                {% endif %}
+                                {% if result.ai_summary %}
+                                    <p class="card-text"><strong>AI summary</strong>: {{ result.ai_summary | safe }}</p>
+                                {% else %}
+                                    <button class="btn btn-secondary get-summary {{ result.opinion_id }}" data-id="{{ result.opinion_id }}">Get Summary</button>
+                                    <div class="mt-2 summary-{{ result.opinion_id }}"></div>
+                                {% endif %}
+                                {% if result.other_dates %}
+                                    <p class="card-text"><strong>Other dates</strong>: {{ result.other_dates }}</p>
+                                {% endif %}
+                                <div class="mt-2">
+                                    <strong>Matched Excerpt:</strong>
+                                    <div style="border: 1px solid #737373; overflow-y: scroll; max-height: 300px;">{{ result.text | safe }}</div>
+                                </div>
+                            </div>
+                            <div class="modal fade" id="feedbackModal{{ result.opinion_id }}" tabindex="-1" aria-labelledby="feedbackModalLabel{{ result.opinion_id }}" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="feedbackModalLabel{{ result.opinion_id }}">Provide Feedback for This Opinion</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <form id="feedbackForm{{ result.opinion_id }}">
+                                            <div class="form-group">
+                                                <label for="feedbackText{{ result.opinion_id }}">Describe what prompted your feedback:</label>
+                                                <textarea class="form-control mt-2" id="feedbackText{{ result.opinion_id }}" rows="3" required></textarea>
+                                            </div>
+                                            <button type="submit" class="btn btn-primary mt-2" form="feedbackForm{{ result.opinion_id }}">Submit Feedback</button>
+                                        </form>
+                                    </div>
                                     </div>
                                 </div>
                             </div>
-                        {% endfor %}
-                    {% else %}
-                        <p>No results found.</p>
-                    {% endif %}
-                </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p>No results found.</p>
+                {% endif %}
             </div>
-        </form>
+        </div>
     </div>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
@@ -247,6 +270,39 @@
                     .html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Searching...');
                 event.target.submit();
             });
+            
+            // Feedback
+            $('[id^="feedbackForm"]').on('submit', function(e) {
+                e.preventDefault();
+                var opinionId = this.id.replace('feedbackForm', '');
+                var feedbackText = $(`#feedbackText${opinionId}`).val();
+                
+                $.ajax({
+                    url: '/submit-feedback',
+                    type: 'POST',
+                    data: JSON.stringify({
+                        opinionId: opinionId,
+                        feedback: feedbackText
+                    }),
+                    contentType: 'application/json',
+                    dataType: 'json',
+                    success: function(response) {
+                        $(`#feedbackModal${opinionId}`).modal('hide');
+                        $(".feedback-success-alert").css({display: 'block'});
+                        setTimeout(function() {
+                            $(".feedback-success-alert").css({display: 'none'});
+                        }, 10000);
+                    },
+                    error: function(xhr, status, error) {
+                        $(`#feedbackModal${opinionId}`).modal('hide');
+                        $(".feedback-failed-alert").css({display: 'block'});
+                        setTimeout(function() {
+                            $(".feedback-failed-alert").css({display: 'none'});
+                        }, 10000);
+                    }
+                });
+            });
+
         });
     </script>
 </body>
