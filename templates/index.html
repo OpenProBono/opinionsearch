@@ -143,26 +143,28 @@
                                 </h6>
                                 <p class="card-text"><strong>Match Score</strong>: {{ result.match_score }}</p>
                                 {% if result.url %}
-                                    <p class="card-text"><strong>CourtListener link</strong>: <a href="{{ result.url }}">{{ result.url }}</a></p>
+                                    <p class="card-text"><strong>CourtListener Link</strong>: <a href="{{ result.url }}">{{ result.url }}</a></p>
                                 {% endif %}
                                 {% if result.download_url %}
-                                    <p class="card-text"><strong>Download link</strong>: <a href="{{ result.download_url }}">{{ result.download_url }}</a></p>
+                                    <p class="card-text"><strong>Download Link</strong>: <a href="{{ result.download_url }}">{{ result.download_url }}</a></p>
                                 {% endif %}
                                 {% if result.summary %}
-                                    <p class="card-text"><strong>CourtListener summary</strong>: {{ result.summary }}</p>
+                                    <p class="card-text"><strong>CourtListener Summary</strong>:</p>
+                                    <div class="ms-2">{{ result.summary | safe }}</div>
                                 {% endif %}
                                 {% if result.ai_summary %}
-                                    <p class="card-text"><strong>AI summary</strong>: {{ result.ai_summary | safe }}</p>
+                                    <p class="card-text"><strong>AI summary</strong>:</p>
+                                    <div class="ms-2">{{ result.ai_summary | safe }}</div>
                                 {% else %}
                                     <button class="btn btn-secondary get-summary {{ result.opinion_id }}" data-id="{{ result.opinion_id }}">Get Summary</button>
-                                    <div class="mt-2 summary-{{ result.opinion_id }}"></div>
+                                    <div class="mb-2 summary-{{ result.opinion_id }}"></div>
                                 {% endif %}
                                 {% if result.other_dates %}
                                     <p class="card-text"><strong>Other dates</strong>: {{ result.other_dates }}</p>
                                 {% endif %}
                                 <div class="mt-2">
-                                    <strong>Matched Excerpt:</strong>
-                                    <div style="border: 1px solid #737373; overflow-y: scroll; max-height: 300px;">{{ result.text | safe }}</div>
+                                    <p class="card-text"><strong>Matched Excerpt</strong>:</p>
+                                    <div class="p-2" style="border: 2px solid #737373; background-color:#F0F0F0; overflow-y: scroll; max-height: 500px;">{{ result.text | safe }}</div>
                                 </div>
                             </div>
                             <div class="modal fade" id="feedbackModal{{ result.opinion_id }}" tabindex="-1" aria-labelledby="feedbackModalLabel{{ result.opinion_id }}" aria-hidden="true">

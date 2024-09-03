@@ -187,7 +187,7 @@ def index():
             # format opinions
             formatted_opinions = []
             for opinion in opinions:
-                match_score = round(max([0, (2 - opinion['distance']) / 2]), 5)
+                match_score = round(max([0, (2 - opinion['distance']) / 2]), 8)
                 metadata = opinion["entity"]["metadata"]
                 case_name = metadata["case_name"]
                 if len(case_name) > 200:
