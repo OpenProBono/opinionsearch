@@ -13,7 +13,7 @@ COURTLISTENER = "https://www.courtlistener.com"
 API_URL = os.environ["OPB_API_URL"]
 CASE_ENDPOINT = API_URL + "/search_opinions"
 SUMMARY_ENDPOINT = API_URL + "/get_opinion_summary"
-COUNT_ENDPOINT = API_URL + "/get_opinion_count"
+COUNT_ENDPOINT = API_URL + "/resource_count/courtlistener"
 FEEDBACK_ENDPOINT = API_URL + "/opinion_feedback"
 
 JURISDICTIONS = [
@@ -83,7 +83,7 @@ class Opinion:
     def __init__(
         self, opinion_id: int, case_name: str, court_name: str, author_name: str, ai_summary: str,
         text: str, date_filed: str, url: str, date_blocked: str, other_dates: str, summary: str,
-        download_url: str, match_score: float
+        download_url: str, match_score: float, opinion_type: str
     ) -> None:
         self.opinion_id = opinion_id
         self.case_name = case_name
@@ -98,6 +98,7 @@ class Opinion:
         self.summary = summary
         self.download_url = download_url
         self.match_score = match_score
+        self.opinion_type = opinion_type
 
 
 def format_str(text: str) -> str:
@@ -113,12 +114,27 @@ def format_str(text: str) -> str:
     return re.sub(pattern, replace_with_br, text.replace("\n\n","<br>"))
 
 def mark_keyword(text, keyword):
-    pattern = re.compile(re.escape(keyword), re.IGNORECASE)
+    # Split the keyword into individual words
+    keywords = keyword.split()
+    
+    # Create a pattern to match the full keyword phrase first
+    phrases_pattern = r'\b' + re.escape(keyword) + r'\b'
+    phrases_compiled = re.compile(phrases_pattern, re.IGNORECASE)
     
     def replace_func(match):
         return f'<mark>{match.group()}</mark>'
     
-    return pattern.sub(replace_func, text)
+    # First, mark the full keyword phrase
+    text = phrases_compiled.sub(replace_func, text)
+    
+    # Create a pattern to match individual words only if they are standalone
+    words_pattern = r'\b' + r'\b|\b'.join(re.escape(word) for word in keywords) + r'\b'
+    words_compiled = re.compile(words_pattern, re.IGNORECASE)
+    
+    # Mark individual words only if the full phrase is not marked
+    text = words_compiled.sub(lambda match: match.group() if f'<mark>{match.group()}</mark>' in text else replace_func(match), text)
+    
+    return text
 
 def format_summary(summary):
     # Split the summary into lines
@@ -144,10 +160,25 @@ def format_summary(summary):
         formatted_lines.append(line)
     
     # Join the lines with line breaks
-    formatted_content = '<br>'.join(formatted_lines)
-    
-    # Wrap everything in a single paragraph tag
-    return f'<p>{formatted_content}</p>'
+    return '<br>'.join(formatted_lines)
+
+def get_opinion_type(opinion_code):
+    types = {
+        '010combined': 'Combined',
+        '015unamimous': 'Unanimous',
+        '015unaminous': 'Unanimous',
+        '020lead': 'Lead',
+        '025plurality': 'Plurality',
+        '030concurrence': 'Concurrence',
+        '035concurrenceinpart': 'Concurrence in Part',
+        '040dissent': 'Dissent',
+        '050addendum': 'Addendum',
+        '060remittitur': 'Remittitur',
+        '070rehearing': 'Rehearing',
+        '080onthemerits': 'On the Merits',
+        '090onmotiontostrike': 'On Motion to Strike'
+    }
+    return types.get(opinion_code, 'Unknown')
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -194,6 +225,7 @@ def index():
                     case_name = case_name[:200] + "..."
                 court_name = metadata["court_name"]
                 author_name = metadata["author_name"] if "author_name" in metadata else None
+                opinion_type = get_opinion_type(metadata["type"]) if "type" in metadata else "Unknown"
                 ai_summary = format_summary(metadata["ai_summary"]) if "ai_summary" in metadata else None
                 # CL summary
                 summary = metadata["summary"] if "summary" in metadata else None
@@ -231,6 +263,7 @@ def index():
                     "other_dates": other_dates,
                     "summary": summary,
                     "match_score": match_score,
+                    "opinion_type": opinion_type,
                 }))
             end = time.time()
             elapsed = str(round(end - start, 5))
@@ -247,16 +280,16 @@ def index():
     return render_template("index.html", jurisdictions=JURISDICTIONS)
 
 
-@app.route("/opinion_count")
-def get_opinion_count() -> int:
+@app.route("/resource_count")
+def get_resource_count() -> int:
     try:
         response = requests.get(COUNT_ENDPOINT, headers=headers, timeout=90)
     except requests.exceptions.Timeout:
         return {"message": "Failure: timeout"}
     if response.status_code == 200:
         response_json = response.json()
-        if "opinion_count" in response_json:
-            return {"message": "Success", "opinion_count": response_json["opinion_count"]}
+        if "resource_count" in response_json:
+            return {"message": "Success", "resource_count": response_json["resource_count"]}
     return {"message": "Failure: exception in request or bad response code"}
 
 
